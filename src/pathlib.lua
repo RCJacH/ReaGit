@@ -52,6 +52,20 @@ function PATHLIB:exists()
     return os.rename(self.path, self.path) and true or false
 end
 
+function PATHLIB:read()
+    local f = io.open(self.path)
+    f:flush()
+    local result = f:read('*a')
+    f:close()
+    return result
+end
+
+function PATHLIB:write(content)
+    local f = io.open(self.path)
+    f:write(content)
+    f:close()
+end
+
 function PATHLIB:mkdir()
     if not self.is_folder() then return end
     return self:run(string.format('mkdir "%s"', self.path))
