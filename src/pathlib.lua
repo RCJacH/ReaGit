@@ -1,5 +1,7 @@
 local SHELL = require('src.sh')
 
+local UNIX = package.config:sub(1,1) == '/'
+
 
 local PATHLIB = {}
 PATHLIB.__index = PATHLIB
@@ -72,6 +74,14 @@ end
 function PATHLIB:mkdir()
     if not self:is_folder() then return end
     return SHELL(string.format('mkdir "%s"', self.path))
+end
+
+function PATHLIB:rm_no_regret()
+    if self:is_folder() then
+        return SHELL(string.format('%s "%s"', UNIX and 'rm -rf' or 'rmdir /s /q', self.path))
+    else
+        return SHELL(string.format('%s "%s"', UNIX and 'rm' or 'del', self.path))
+    end
 end
 
 

@@ -126,15 +126,19 @@ function testFileStructure()
     parser:create_file_structure(path)
     local project_folder = path / 'TEST/'
     LU.assertIsTrue(project_folder:exists())
+    project_folder:rm_no_regret()
 end
 
 function testRetrieveFromFolderStructure()
     local parser = CHUNKPARSER(GROUP_WITH_MULTIPLE_TRACKS)
     local path = PATHLIB(project_path)
     parser:create_file_structure(path)
-    local parser2 = CHUNKPARSER(path / 'TEST/')
+    local project_folder = path / 'TEST/'
+    local parser2 = CHUNKPARSER(project_folder)
     local s1 = tostring(parser)
     local s2 = tostring(parser2)
     LU.assertEquals(s1, s2)
+    project_folder:rm_no_regret()
 end
+
 os.exit(LU.LuaUnit.run())
