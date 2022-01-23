@@ -51,7 +51,8 @@ function PATHLIB:run(...)
 end
 
 function PATHLIB:exists()
-    return os.rename(self.path, self.path) and true or false
+    local status, _, code = os.rename(self.path, self.path)
+    return status or code == 13
 end
 
 function PATHLIB:read()
