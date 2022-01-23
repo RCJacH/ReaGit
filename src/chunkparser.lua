@@ -22,7 +22,9 @@ function CHUNKPARSER:create_file_structure(base_path)
         table.insert(t, line)
     end
     for _, child in ipairs(self.children) do
-        child:create_file_structure(folder)
+        if child.subtype ~= 'NULL' then
+            child:create_file_structure(folder)
+        end
         table.insert(t, string.format('CHILD %s %s', child.type, child.id))
     end
     f:write(table.concat(t, '\n')..'\n')
@@ -40,6 +42,7 @@ function CHUNKPARSER:parse_meta(content)
 end
 
 function CHUNKPARSER:parse_line(index, content)
+    content = content:trim()
     if content == '' then return end
     if index == 1 then
         local t = content:split()
