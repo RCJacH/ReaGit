@@ -130,5 +130,11 @@ end
 
 function testRetrieveFromFolderStructure()
     local parser = CHUNKPARSER(GROUP_WITH_MULTIPLE_TRACKS)
+    local path = PATHLIB(project_path)
+    parser:create_file_structure(path)
+    local parser2 = CHUNKPARSER(path / 'TEST/')
+    local s1 = tostring(parser)
+    local s2 = tostring(parser2)
+    LU.assertEquals(s1, s2)
 end
 os.exit(LU.LuaUnit.run())

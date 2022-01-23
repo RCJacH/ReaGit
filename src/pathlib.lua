@@ -4,8 +4,11 @@ local SHELL = require('src.sh')
 local PATHLIB = {}
 PATHLIB.__index = PATHLIB
 
+local function join(...)
+    return table.concat({...}, '/'):gsub('[/\\]+', '/')
+end
 
-function PATHLIB.__tostring(self)
+function PATHLIB:__tostring()
     return self.path
 end
 
@@ -18,8 +21,7 @@ function PATHLIB.__eq(self, other)
 end
 
 function PATHLIB.__div (self, other)
-    local path = self:is_folder() and self.path or self.path .. '/'
-    return PATHLIB.new(path .. other)
+    return PATHLIB.new(self.path, other)
 end
 
 
@@ -73,7 +75,7 @@ end
 
 
 function PATHLIB.new(...)
-    local path = table.concat({...}, '/'):gsub('\\', '/')
+    local path = join(...)
     local self = {path = path}
     setmetatable(self, PATHLIB)
     self._folder, self._name = self.path:match('(.+/)(%.?[^/]+)/?')

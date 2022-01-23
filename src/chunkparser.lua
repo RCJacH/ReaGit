@@ -1,6 +1,20 @@
 local CHUNKPARSER = {}
 CHUNKPARSER.__index = CHUNKPARSER
 
+
+function CHUNKPARSER:__tostring()
+    local t = {string.format('%s %s', self.type, (self.subtype or ''))}
+    for _, line in ipairs(self) do
+        table.insert(t, line)
+    end
+    for _, child in ipairs(self.children) do
+        if child.subtype ~= 'NULL' then
+            table.insert(t, tostring(child))
+        end
+    end
+    return '<'..table.concat(t, '\n')..'\n>'
+end
+
 local function prepare_target(parser, base_path)
     local folder_path, foldername, filename
     if parser.type == 'GROUP' then
@@ -113,7 +127,28 @@ function CHUNKPARSER.new_from_chunk(chunk)
 end
 
 function CHUNKPARSER.new_from_file(path)
+    local args, f
     local self = CHUNKPARSER.new(path:read())
+    for i, line in ipairs(self.content:split('\n') )do
+        if i == 1 then
+            args = line:split()
+            self.type = args[1]
+            self.subtype = args[2]
+            goto skip_to_next
+        end
+        if line:sub(1, 5) == 'CHILD' then
+            if line == 'CHILD TAKE nil' then
+                self:add_child('TAKE NULL')
+                goto skip_to_next
+            end
+            args = line:split()
+            f = path:parent() / args[2] / args[3]
+            self:add_child(f)
+            goto skip_to_next
+        end
+        table.insert(self, line)
+        ::skip_to_next::
+    end
     return self
 end
 
@@ -123,7 +158,8 @@ setmetatable(CHUNKPARSER, {
         if type(content) == 'string' then
             return CHUNKPARSER.new_from_chunk(content)
         else
-            return CHUNKPARSER.new_from_file(content)
+            local path = content:is_folder() and content / 'main' or content
+            return CHUNKPARSER.new_from_file(path)
         end
     end
 })
