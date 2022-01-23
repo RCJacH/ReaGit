@@ -61,14 +61,14 @@ function PATHLIB:read()
 end
 
 function PATHLIB:write(content)
-    local f = io.open(self.path)
+    local f = io.open(self.path, 'w')
     f:write(content)
     f:close()
 end
 
 function PATHLIB:mkdir()
-    if not self.is_folder() then return end
-    return self:run(string.format('mkdir "%s"', self.path))
+    if not self:is_folder() then return end
+    return SHELL(string.format('mkdir "%s"', self.path))
 end
 
 

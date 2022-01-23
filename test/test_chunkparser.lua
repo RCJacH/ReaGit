@@ -4,6 +4,7 @@ local workspace_folder = debug.getinfo(1).source:match("@(.*[/\\]).+[/\\]")
 package.path = package.path .. ';' .. workspace_folder ..'?.lua'
 
 require('src.std+')
+PATHLIB = require('src.pathlib')
 CHUNKPARSER = require('src.chunkparser')
 
 local project_path = workspace_folder .. 'test/project/'
@@ -88,6 +89,7 @@ function testParseChildren()
     LU.assertEquals(#parser.children, 1)
     local take = parser.children[1]
     LU.assertEquals(take.type, 'TAKE')
+    LU.assertEquals(#take, 2)
     LU.assertEquals(take.children[1].type, 'SOURCE')
 end
 
@@ -104,6 +106,14 @@ function testGroup()
     LU.assertEquals(parser.children[1].id, '320653B5-869B-49C8-9435-0D974C7A845C')
     LU.assertEquals(parser.children[2].id, '33374A97-357A-460B-BF17-2DE20F29CF97')
     LU.assertEquals(#parser.children[2].children, 2)
+end
+
+function testFileStructure()
+    local parser = CHUNKPARSER(GROUP_WITH_MULTIPLE_TRACKS)
+    local path = PATHLIB(project_path)
+    parser:create_file_structure(path)
+    local project_folder = path / 'TEST'
+    LU.assertIsTrue(project_folder:exists())
 end
 
 os.exit(LU.LuaUnit.run())
