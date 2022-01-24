@@ -38,7 +38,7 @@ function GIT:add_all()
 end
 
 function GIT:commit(message, ...)
-    self:run(table.concat({string.format('git commit -m %s', message), ...}))
+    self:run(table.concat({string.format('git commit -m "%s"', message), ...}))
 end
 
 function GIT:commit_amend()
