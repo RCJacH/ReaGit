@@ -60,7 +60,8 @@ function PROJECT:add(name, ...)
     end
 end
 
-function PROJECT:update(name, tracks)
+function PROJECT:update(name, tracks, message)
+    message = message or os.date('update commit @ %Y%m%d-%H%M%S')
     local s = string.format('<GROUP %s\n%s\n>', name, table.concat(tracks, '\n'))
     self.children[name]:write(s)
 end
