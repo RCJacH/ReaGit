@@ -10,21 +10,25 @@ function SUBPROJECT:read()
     return CHUNKPARSER(self.path / 'main')
 end
 
-function SUBPROJECT:write(chunk)
+function SUBPROJECT:write(chunk, message)
     local parser = CHUNKPARSER(chunk)
     parser:create_file_structure(self.path:parent())
+    self.git:add_all()
+    message = message or os.date('commit @ %Y/%m/%d-%H:%M:%S')
+    self.git:commit(message)
     return parser
 end
 
-function SUBPROJECT:update(chunk)
+function SUBPROJECT:update(chunk, message)
+    message = message or os.date('update @ %Y/%m/%d-%H:%M:%S')
     self.git:rm('TRACK')
-    return self:write(chunk)
+    return self:write(chunk, message)
 end
 
 function SUBPROJECT:init()
     self.path:mkdir()
     self.git:init()
-    self.file:write('')
+    self.mainfile:write('')
     self.git:add_all()
     self.git:commit('init project')
 end
@@ -34,7 +38,7 @@ function SUBPROJECT.new(path)
     setmetatable(self, SUBPROJECT)
     self.path = path
     self.git = GIT(path)
-    self.file = self.path / 'main'
+    self.mainfile = self.path / 'main'
 
     return self
 end
@@ -53,7 +57,9 @@ PROJECT.__index = PROJECT
 function PROJECT:add(name, ...)
     local project = SUBPROJECT(self.path / (name..'/'))
     project:init()
-    self.file:append(name)
+    self.mainfile:append_line(name)
+    self.git:add(self.mainfile.path)
+    self.git:commit('add '.. name .. ' as subproject')
     self.children[name] = project
     if #{...} > 0 then
         self:update(name, ...)
@@ -61,14 +67,16 @@ function PROJECT:add(name, ...)
 end
 
 function PROJECT:update(name, tracks, message)
-    message = message or os.date('update commit @ %Y%m%d-%H%M%S')
+    message = message or os.date('update '..name)
     local s = string.format('<GROUP %s\n%s\n>', name, table.concat(tracks, '\n'))
     self.children[name]:write(s)
+    self.git:add(name)
+    self.git:commit(message)
 end
 
 function PROJECT:list()
     local t = {}
-    for _, v in ipairs(self.file:read():split('\n')) do
+    for _, v in ipairs(self.mainfile:read():split('\n')) do
         table.insert(t, v)
     end
     return t
@@ -78,10 +86,9 @@ function PROJECT.new(path)
     path = PATHLIB(path)
     local dir = path:parent() / '.reagit/'
     local filename = path:stem()
-    local file = dir / filename
     local self = {
         name = filename,
-        file = file,
+        mainfile = dir / filename,
         path = dir,
         git = GIT(dir),
         children = {}
@@ -91,7 +98,7 @@ function PROJECT.new(path)
     if not self.path:exists() then
         self.path:mkdir()
         self.git:init()
-        self.file:write('')
+        self.mainfile:write('')
         self.git:add_all()
         self.git:commit('init project')
     end

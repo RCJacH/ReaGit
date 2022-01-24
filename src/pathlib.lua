@@ -77,6 +77,10 @@ function PATHLIB:append(content)
     f:close()
 end
 
+function PATHLIB:append_line(content)
+    self:append(content..'\n')
+end
+
 function PATHLIB:mkdir()
     if not self:is_folder() then return end
     return SHELL(string.format('mkdir "%s"', self.path))
