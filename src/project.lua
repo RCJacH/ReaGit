@@ -77,9 +77,16 @@ end
 function PROJECT:list()
     local t = {}
     for _, v in ipairs(self.mainfile:read():split('\n')) do
-        table.insert(t, v)
+        t[v] = SUBPROJECT(self.path / (v .. '/'))
     end
     return t
+end
+
+function PROJECT:contains(trackid)
+    for _, child in ipairs(self.children) do
+        if child.mainfile:read():find(trackid) then return child end
+    end
+    return false
 end
 
 function PROJECT.new(path)
@@ -91,7 +98,6 @@ function PROJECT.new(path)
         mainfile = dir / filename,
         path = dir,
         git = GIT(dir),
-        children = {}
     }
     setmetatable(self, PROJECT)
 
@@ -102,6 +108,8 @@ function PROJECT.new(path)
         self.git:add_all()
         self.git:commit('init project')
     end
+
+    self.children = self:list()
 
     return self
 end
