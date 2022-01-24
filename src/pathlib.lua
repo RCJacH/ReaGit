@@ -91,8 +91,8 @@ function PATHLIB.new(...)
     setmetatable(self, PATHLIB)
     self._folder, self._name = self.path:match('(.+/)(%.?[^/]+)/?')
     local pos = self._name:find('%.')
-    self._stem = pos and self._name:sub(1, pos) or self._name
-    self._ext = pos and self._name:sub(pos, -1) or ''
+    self._stem = pos and self._name:sub(1, pos-1) or self._name
+    self._ext = pos and self._name:sub(pos) or ''
     return self
 end
 
