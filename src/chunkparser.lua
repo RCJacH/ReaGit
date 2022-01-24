@@ -15,22 +15,37 @@ function CHUNKPARSER:__tostring()
     return '<'..table.concat(t, '\n')..'\n>'
 end
 
-local function prepare_target(parser, base_path)
-    local folder_path, foldername, filename
-    if parser.type == 'GROUP' then
-        foldername = parser.subtype
+
+function CHUNKPARSER:get_location()
+    local foldername, filename
+    if self.type == 'GROUP' then
+        foldername = self.subtype
         filename = 'main'
     else
-        foldername = parser.type
-        filename = parser.id
+        foldername = self.type
+        filename = self.id
     end
+    return {foldername, filename}
+end
+
+function CHUNKPARSER:get_dirname()
+    return self:get_location()[1]
+end
+
+function CHUNKPARSER:get_filename()
+    return self:get_location()[2]
+end
+
+function CHUNKPARSER:prepare_target(base_path)
+    local folder_path, foldername, filename
+    foldername, filename = table.unpack(self:get_location())
     folder_path = base_path / (foldername..'/')
     folder_path:mkdir()
     return folder_path, folder_path / filename
 end
 
 function CHUNKPARSER:create_file_structure(base_path)
-    local folder, f = prepare_target(self, base_path)
+    local folder, f = self:prepare_target(base_path)
     local t = {string.format('%s %s', self.type, self.subtype)}
     for _, line in ipairs(self) do
         table.insert(t, line)
