@@ -83,11 +83,11 @@ function PATHLIB:mkdir()
 end
 
 function PATHLIB:rm_no_regret()
+    local command = 'rm'
     if self:is_folder() then
-        return SHELL(string.format('%s "%s"', UNIX and 'rm -rf' or 'rmdir /s /q', self.path))
-    else
-        return SHELL(string.format('%s "%s"', UNIX and 'rm' or 'del', self.path))
+        command = UNIX and 'rm -rf' or 'rmdir /s /q'
     end
+    return SHELL(string.format('%s "%s"', command, self.path))
 end
 
 
