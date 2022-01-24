@@ -71,6 +71,12 @@ function PATHLIB:write(content)
     f:close()
 end
 
+function PATHLIB:append(content)
+    local f = io.open(self.path, 'a+')
+    f:write(content)
+    f:close()
+end
+
 function PATHLIB:mkdir()
     if not self:is_folder() then return end
     return SHELL(string.format('mkdir "%s"', self.path))
