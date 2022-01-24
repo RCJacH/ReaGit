@@ -1,4 +1,4 @@
-local PATHLIB = require('src.pathlib')
+ PATHLIB = require('src.pathlib')
 local GIT = require('src.git')
 local CHUNKPARSER = require('src.chunkparser')
 
@@ -12,7 +12,7 @@ end
 
 function SUBPROJECT:write(chunk)
     local parser = CHUNKPARSER(chunk)
-    parser:create_file_structure(self.path)
+    parser:create_file_structure(self.path:parent())
     return parser
 end
 
@@ -21,11 +21,20 @@ function SUBPROJECT:update(chunk)
     return self:write(chunk)
 end
 
+function SUBPROJECT:init()
+    self.path:mkdir()
+    self.git:init()
+    self.file:write('')
+    self.git:add_all()
+    self.git:commit('init project')
+end
+
 function SUBPROJECT.new(path)
     local self = {}
     setmetatable(self, SUBPROJECT)
     self.path = path
     self.git = GIT(path)
+    self.file = self.path / 'main'
 
     return self
 end
@@ -41,9 +50,27 @@ local PROJECT = {}
 PROJECT.__index = PROJECT
 
 
-function PROJECT:add(chunk)
-    local parser = CHUNKPARSER(chunk)
-    local subgit = GIT(self.path / parser:get_dirname())
+function PROJECT:add(name, ...)
+    local project = SUBPROJECT(self.path / (name..'/'))
+    project:init()
+    self.file:append(name)
+    self.children[name] = project
+    if #{...} > 0 then
+        self:update(name, ...)
+    end
+end
+
+function PROJECT:update(name, tracks)
+    local s = string.format('<GROUP %s\n%s\n>', name, table.concat(tracks, '\n'))
+    self.children[name]:write(s)
+end
+
+function PROJECT:list()
+    local t = {}
+    for _, v in ipairs(self.file:read():split('\n')) do
+        table.insert(t, v)
+    end
+    return t
 end
 
 function PROJECT.new(path)
