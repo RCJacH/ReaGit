@@ -4,22 +4,22 @@ local workspace_folder = debug.getinfo(1).source:match("@(.*[/\\]).+[/\\]")
 package.path = package.path .. ';' .. workspace_folder ..'?.lua'
 
 require('src.std+')
-PATHLIB = require('src.pathlib')
-CHUNKPARSER = require('src.chunkparser')
+Pathlib = require('src.pathlib')
+ChunkParser = require('src.chunkparser')
 
 local project_path = workspace_folder .. 'test/project/'
 
 dofile('test/chunks.lua')
 
 function testEmptyTrack()
-    local parser = CHUNKPARSER(EMPTY_TRACK)
+    local parser = ChunkParser(EMPTY_TRACK)
     LU.assertEquals(parser.id, '2296AB9A-3C5D-4928-85F1-E1D1FE12BC95')
     LU.assertEquals(parser.name, 'Track is empty')
     LU.assertEquals(#parser.children, 0)
 end
 
 function testParseChildren()
-    local parser = CHUNKPARSER(ITEM_SOURCED)
+    local parser = ChunkParser(ITEM_SOURCED)
     LU.assertEquals(#parser.children, 1)
     local take = parser.children[1]
     LU.assertEquals(take.type, 'TAKE')
@@ -28,12 +28,12 @@ function testParseChildren()
 end
 
 function testMultipleTakes()
-    local parser = CHUNKPARSER(ITEM_WITH_MULTIPLE_TAKES)
+    local parser = ChunkParser(ITEM_WITH_MULTIPLE_TAKES)
     LU.assertEquals(#parser.children, 3)
 end
 
 function testGroup()
-    local parser = CHUNKPARSER(GROUP_WITH_MULTIPLE_TRACKS)
+    local parser = ChunkParser(GROUP_WITH_MULTIPLE_TRACKS)
     LU.assertEquals(parser.type, 'GROUP')
     LU.assertEquals(parser.subtype, 'TEST')
     LU.assertEquals(#parser.children, 2)
@@ -43,8 +43,8 @@ function testGroup()
 end
 
 function testFileStructure()
-    local parser = CHUNKPARSER(GROUP_WITH_MULTIPLE_TRACKS)
-    local path = PATHLIB(project_path)
+    local parser = ChunkParser(GROUP_WITH_MULTIPLE_TRACKS)
+    local path = Pathlib(project_path)
     parser:create_file_structure(path)
     local project_folder = path / 'TEST/'
     LU.assertIsTrue(project_folder:exists())
@@ -52,11 +52,11 @@ function testFileStructure()
 end
 
 function testRetrieveFromFolderStructure()
-    local parser = CHUNKPARSER(GROUP_WITH_MULTIPLE_TRACKS)
-    local path = PATHLIB(project_path)
+    local parser = ChunkParser(GROUP_WITH_MULTIPLE_TRACKS)
+    local path = Pathlib(project_path)
     parser:create_file_structure(path)
     local project_folder = path / 'TEST/'
-    local parser2 = CHUNKPARSER(project_folder)
+    local parser2 = ChunkParser(project_folder)
     local s1 = tostring(parser)
     local s2 = tostring(parser2)
     LU.assertEquals(s1, s2)

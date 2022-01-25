@@ -3,13 +3,13 @@ local workspace_folder = debug.getinfo(1).source:match("@(.*[/\\]).+[/\\]")
 
 package.path = package.path .. ';' .. workspace_folder ..'?.lua'
 
-PATHLIB = require('src.pathlib')
+Pathlib = require('src.pathlib')
 
 local project_path = workspace_folder .. 'test/project/'
 
 
 function testPathInit()
-    local folder_path = PATHLIB(project_path)
+    local folder_path = Pathlib(project_path)
     LU.assertEquals(folder_path:name(), 'project')
     LU.assertEquals(folder_path:ext(), '')
     local path = folder_path / 'init.file'
@@ -18,7 +18,7 @@ function testPathInit()
 end
 
 function testExists()
-    local folder_path = PATHLIB(project_path)
+    local folder_path = Pathlib(project_path)
     LU.assertIsTrue(folder_path:exists())
     local filepath = folder_path / 'init.file'
     LU.assertIsTrue(filepath:exists())

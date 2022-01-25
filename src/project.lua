@@ -1,17 +1,17 @@
- PATHLIB = require('src.pathlib')
-local GIT = require('src.git')
-local CHUNKPARSER = require('src.chunkparser')
+Pathlib = require('src.pathlib')
+local Git = require('src.git')
+local ChunkParser = require('src.chunkparser')
 
 
-local SUBPROJECT = {}
-SUBPROJECT.__index = SUBPROJECT
+local SubProject = {}
+SubProject.__index = SubProject
 
-function SUBPROJECT:read()
-    return CHUNKPARSER(self.path / 'main')
+function SubProject:read()
+    return ChunkParser(self.path / 'main')
 end
 
-function SUBPROJECT:write(chunk, message)
-    local parser = CHUNKPARSER(chunk)
+function SubProject:write(chunk, message)
+    local parser = ChunkParser(chunk)
     parser:create_file_structure(self.path:parent())
     self.git:add_all()
     message = message or os.date('commit @ %Y/%m/%d-%H:%M:%S')
@@ -19,13 +19,13 @@ function SUBPROJECT:write(chunk, message)
     return parser
 end
 
-function SUBPROJECT:update(chunk, message)
+function SubProject:update(chunk, message)
     message = message or os.date('update @ %Y/%m/%d-%H:%M:%S')
     self.git:rm('TRACK')
     return self:write(chunk, message)
 end
 
-function SUBPROJECT:init()
+function SubProject:init()
     self.path:mkdir()
     self.git:init()
     self.mainfile:write('')
@@ -33,29 +33,29 @@ function SUBPROJECT:init()
     self.git:commit('init project')
 end
 
-function SUBPROJECT.new(path)
+function SubProject.new(path)
     local self = {}
-    setmetatable(self, SUBPROJECT)
+    setmetatable(self, SubProject)
     self.path = path
-    self.git = GIT(path)
+    self.git = Git(path)
     self.mainfile = self.path / 'main'
 
     return self
 end
 
-setmetatable(SUBPROJECT, {
+setmetatable(SubProject, {
     __call = function(_, ...)
-        return SUBPROJECT.new(...)
+        return SubProject.new(...)
     end
 })
 
 
-local PROJECT = {}
-PROJECT.__index = PROJECT
+local Project = {}
+Project.__index = Project
 
 
-function PROJECT:add(name, ...)
-    local project = SUBPROJECT(self.path / (name..'/'))
+function Project:add(name, ...)
+    local project = SubProject(self.path / (name..'/'))
     project:init()
     self.mainfile:append_line(name)
     self.git:add(self.mainfile.path)
@@ -66,7 +66,7 @@ function PROJECT:add(name, ...)
     end
 end
 
-function PROJECT:update(name, tracks, message)
+function Project:update(name, tracks, message)
     message = message or os.date('update '..name)
     local s = string.format('<GROUP %s\n%s\n>', name, table.concat(tracks, '\n'))
     self.children[name]:write(s)
@@ -74,32 +74,32 @@ function PROJECT:update(name, tracks, message)
     self.git:commit(message)
 end
 
-function PROJECT:list()
+function Project:list()
     local t = {}
     for _, v in ipairs(self.mainfile:read():split('\n')) do
-        t[v] = SUBPROJECT(self.path / (v .. '/'))
+        t[v] = SubProject(self.path / (v .. '/'))
     end
     return t
 end
 
-function PROJECT:contains(trackid)
+function Project:contains(trackid)
     for _, child in ipairs(self.children) do
         if child.mainfile:read():find(trackid) then return child end
     end
     return false
 end
 
-function PROJECT.new(path)
-    path = PATHLIB(path)
+function Project.new(path)
+    path = Pathlib(path)
     local dir = path:parent() / '.reagit/'
     local filename = path:stem()
     local self = {
         name = filename,
         mainfile = dir / filename,
         path = dir,
-        git = GIT(dir),
+        git = Git(dir),
     }
-    setmetatable(self, PROJECT)
+    setmetatable(self, Project)
 
     if not self.path:exists() then
         self.path:mkdir()
@@ -114,10 +114,10 @@ function PROJECT.new(path)
     return self
 end
 
-setmetatable(PROJECT, {
+setmetatable(Project, {
     __call = function(_, ...)
-        return PROJECT.new(...)
+        return Project.new(...)
     end
 })
 
-return PROJECT
+return Project

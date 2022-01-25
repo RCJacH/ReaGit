@@ -1,5 +1,5 @@
-local SHELL = {}
-SHELL.__index = SHELL
+local Shell = {}
+Shell.__index = Shell
 
 
 local function join(...)
@@ -16,11 +16,11 @@ local function run(s)
 end
 
 
-setmetatable(SHELL, {
+setmetatable(Shell, {
     __call = function (_, ...)
         return run(join(...))
     end
 })
 
 
-return SHELL
+return Shell

@@ -1,8 +1,8 @@
-local CHUNKPARSER = {}
-CHUNKPARSER.__index = CHUNKPARSER
+local ChunkParser = {}
+ChunkParser.__index = ChunkParser
 
 
-function CHUNKPARSER:__tostring()
+function ChunkParser:__tostring()
     local t = {string.format('%s %s', self.type, (self.subtype or ''))}
     for _, line in ipairs(self) do
         table.insert(t, line)
@@ -16,7 +16,7 @@ function CHUNKPARSER:__tostring()
 end
 
 
-function CHUNKPARSER:get_location()
+function ChunkParser:get_location()
     local foldername, filename
     if self.type == 'GROUP' then
         foldername = self.subtype
@@ -28,15 +28,15 @@ function CHUNKPARSER:get_location()
     return {foldername, filename}
 end
 
-function CHUNKPARSER:get_dirname()
+function ChunkParser:get_dirname()
     return self:get_location()[1]
 end
 
-function CHUNKPARSER:get_filename()
+function ChunkParser:get_filename()
     return self:get_location()[2]
 end
 
-function CHUNKPARSER:prepare_target(base_path)
+function ChunkParser:prepare_target(base_path)
     local folder_path, foldername, filename
     foldername, filename = table.unpack(self:get_location())
     folder_path = base_path / (foldername..'/')
@@ -44,7 +44,7 @@ function CHUNKPARSER:prepare_target(base_path)
     return folder_path, folder_path / filename
 end
 
-function CHUNKPARSER:create_file_structure(base_path)
+function ChunkParser:create_file_structure(base_path)
     local folder, f = self:prepare_target(base_path)
     local t = {string.format('%s %s', self.type, self.subtype)}
     for _, line in ipairs(self) do
@@ -59,7 +59,7 @@ function CHUNKPARSER:create_file_structure(base_path)
     f:write(table.concat(t, '\n')..'\n')
 end
 
-function CHUNKPARSER:parse_meta(content)
+function ChunkParser:parse_meta(content)
     if not self.id then
         local id = content:match('ID {([%dA-F]+%-[%dA-F]+%-[%dA-F]+%-[%dA-F]+%-[%dA-F]+)}')
         if id then self.id = id end
@@ -70,7 +70,7 @@ function CHUNKPARSER:parse_meta(content)
     end
 end
 
-function CHUNKPARSER:parse_line(index, content)
+function ChunkParser:parse_line(index, content)
     content = content:trim()
     if content == '' then return end
     if index == 1 then
@@ -83,11 +83,11 @@ function CHUNKPARSER:parse_line(index, content)
     table.insert(self, content)
 end
 
-function CHUNKPARSER:add_child(content)
-    table.insert(self.children, CHUNKPARSER(content))
+function ChunkParser:add_child(content)
+    table.insert(self.children, ChunkParser(content))
 end
 
-function CHUNKPARSER:parse_children(content)
+function ChunkParser:parse_children(content)
     local s = content
     for child in content:gmatch('%b<>') do
         self:add_child(child)
@@ -97,7 +97,7 @@ function CHUNKPARSER:parse_children(content)
     return s
 end
 
-function CHUNKPARSER:parse_item(content)
+function ChunkParser:parse_item(content)
     content = content:gsub('(IID %d+)', '%1\nTAKE FIRST') .. 'TAKE'
     local i = 1
     for v in content:gmatch('(.-)TAKE') do
@@ -112,38 +112,38 @@ function CHUNKPARSER:parse_item(content)
     end
 end
 
-function CHUNKPARSER:parse_content(content)
+function ChunkParser:parse_content(content)
     content = self:parse_children(content)
     for i, v in ipairs(content:split('\n')) do
         self:parse_line(i, v)
     end
 end
 
-function CHUNKPARSER:parse(content)
+function ChunkParser:parse(content)
     if content:sub(1, 4) == 'ITEM' then return self:parse_item(content) end
     self:parse_content(content)
 end
 
-function CHUNKPARSER.new(content)
+function ChunkParser.new(content)
     local self = {
         content = content:trim(),
         children = {}
     }
-    setmetatable(self, CHUNKPARSER)
+    setmetatable(self, ChunkParser)
     return self
 end
 
-function CHUNKPARSER.new_from_chunk(chunk)
-    local self = CHUNKPARSER.new(chunk)
+function ChunkParser.new_from_chunk(chunk)
+    local self = ChunkParser.new(chunk)
     local content = self.content:match('^<(.+)>$')
     if content then self.content = content end
     self:parse(self.content)
     return self
 end
 
-function CHUNKPARSER.new_from_file(path)
+function ChunkParser.new_from_file(path)
     local args, f
-    local self = CHUNKPARSER.new(path:read())
+    local self = ChunkParser.new(path:read())
     for i, line in ipairs(self.content:split('\n') )do
         if i == 1 then
             args = line:split()
@@ -168,15 +168,15 @@ function CHUNKPARSER.new_from_file(path)
 end
 
 
-setmetatable(CHUNKPARSER, {
+setmetatable(ChunkParser, {
     __call = function (_, content)
         if type(content) == 'string' then
-            return CHUNKPARSER.new_from_chunk(content)
+            return ChunkParser.new_from_chunk(content)
         else
             local path = content:is_folder() and content / 'main' or content
-            return CHUNKPARSER.new_from_file(path)
+            return ChunkParser.new_from_file(path)
         end
     end
 })
 
-return CHUNKPARSER
+return ChunkParser

@@ -1,20 +1,20 @@
-local SHELL = require('src.sh')
+local Shell = require('src.sh')
 
 local UNIX = package.config:sub(1,1) == '/'
 
 
-local PATHLIB = {}
-PATHLIB.__index = PATHLIB
+local Pathlib = {}
+Pathlib.__index = Pathlib
 
 local function join(...)
     return table.concat({...}, '/'):gsub('[/\\]+', '/')
 end
 
-function PATHLIB:__tostring()
+function Pathlib:__tostring()
     return self.path
 end
 
-function PATHLIB.__eq(self, other)
+function Pathlib.__eq(self, other)
     if type(other) == 'string' then
         return self.path == other:gsub('\\', '/')
     elseif other.path then
@@ -22,42 +22,42 @@ function PATHLIB.__eq(self, other)
     end
 end
 
-function PATHLIB.__div (self, other)
-    return PATHLIB.new(self.path, other)
+function Pathlib.__div (self, other)
+    return Pathlib.new(self.path, other)
 end
 
 
-function PATHLIB:is_folder()
+function Pathlib:is_folder()
     return self.path:sub(-1) == '/'
 end
 
-function PATHLIB:name()
+function Pathlib:name()
     return self._name
 end
 
-function PATHLIB:stem()
+function Pathlib:stem()
     return self._stem
 end
 
-function PATHLIB:ext()
+function Pathlib:ext()
     return self._ext
 end
 
-function PATHLIB:parent()
-    return PATHLIB(self._folder)
+function Pathlib:parent()
+    return Pathlib(self._folder)
 end
 
-function PATHLIB:run(...)
+function Pathlib:run(...)
     local dir = self:is_folder() and self.path or self.parent().path
-    return SHELL(string.format('cd "%s"', dir), ...)
+    return Shell(string.format('cd "%s"', dir), ...)
 end
 
-function PATHLIB:exists()
+function Pathlib:exists()
     local status, _, code = os.rename(self.path, self.path)
     return status or code == 13
 end
 
-function PATHLIB:read()
+function Pathlib:read()
     local f = io.open(self.path)
     f:flush()
     local result = f:read('*a')
@@ -65,40 +65,40 @@ function PATHLIB:read()
     return result
 end
 
-function PATHLIB:write(content)
+function Pathlib:write(content)
     local f = io.open(self.path, 'w')
     f:write(content)
     f:close()
 end
 
-function PATHLIB:append(content)
+function Pathlib:append(content)
     local f = io.open(self.path, 'a+')
     f:write(content)
     f:close()
 end
 
-function PATHLIB:append_line(content)
+function Pathlib:append_line(content)
     self:append(content..'\n')
 end
 
-function PATHLIB:mkdir()
+function Pathlib:mkdir()
     if not self:is_folder() then return end
-    return SHELL(string.format('mkdir "%s"', self.path))
+    return Shell(string.format('mkdir "%s"', self.path))
 end
 
-function PATHLIB:rm_no_regret()
+function Pathlib:rm_no_regret()
     local command = 'rm'
     if self:is_folder() then
         command = UNIX and 'rm -rf' or 'rmdir /s /q'
     end
-    return SHELL(string.format('%s "%s"', command, self.path))
+    return Shell(string.format('%s "%s"', command, self.path))
 end
 
 
-function PATHLIB.new(...)
+function Pathlib.new(...)
     local path = join(...)
     local self = {path = path}
-    setmetatable(self, PATHLIB)
+    setmetatable(self, Pathlib)
     self._folder, self._name = self.path:match('(.+/)(%.?[^/]+)/?')
     local pos = self._name:find('%.')
     self._stem = pos and self._name:sub(1, pos-1) or self._name
@@ -107,10 +107,10 @@ function PATHLIB.new(...)
 end
 
 
-setmetatable(PATHLIB, {
+setmetatable(Pathlib, {
     __call = function(_, ...)
-        return PATHLIB.new(...)
+        return Pathlib.new(...)
     end
 })
 
-return PATHLIB
+return Pathlib
