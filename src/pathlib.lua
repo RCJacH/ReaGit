@@ -59,6 +59,7 @@ end
 
 function Pathlib:read()
     local f = io.open(self.path)
+    if not f then return nil end
     f:flush()
     local result = f:read('*a')
     f:close()
