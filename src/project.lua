@@ -37,6 +37,7 @@ function SubProject.new(path)
     local self = {}
     setmetatable(self, SubProject)
     self.path = path
+    self.name = path:stem()
     self.git = Git(path)
     self.mainfile = self.path / 'main'
 
@@ -55,6 +56,7 @@ Project.__index = Project
 
 
 function Project:add(name, ...)
+    assert(self:get(name) == nil, 'Project already has a group called: '.. name)
     local project = SubProject(self.path / (name..'/'))
     project:init()
     self.mainfile:append_line(name)
@@ -76,14 +78,21 @@ end
 
 function Project:list()
     local t = {}
-    for _, v in ipairs(self.mainfile:read():split('\n')) do
-        t[v] = SubProject(self.path / (v .. '/'))
+    for v in self.mainfile:read():gmatch('([^\r\n]+)') do
+        t[v] = v
     end
     return t
 end
 
-function Project:contains(trackid)
-    for _, child in ipairs(self.children) do
+function Project:get(groupname)
+    for name, child in pairs(self.children) do
+        if name == groupname then return child end
+    end
+    return nil
+end
+
+function Project:search_trackid(trackid)
+    for _, child in pairs(self.children) do
         if child.mainfile:read():find(trackid) then return child end
     end
     return false
@@ -98,6 +107,7 @@ function Project.new(path)
         mainfile = dir / filename,
         path = dir,
         git = Git(dir),
+        children = {}
     }
     setmetatable(self, Project)
 
