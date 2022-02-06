@@ -46,19 +46,14 @@ end
 function Interface:downloadPressed()
 end
 
-function Interface:drawInit()
-    local w, h = reaper.ImGui_GetWindowSize(self.ctx)
-    reaper.ImGui_PushFont(self.ctx, self.font.p)
+function Interface:drawInit(w, h)
     reaper.ImGui_Text(self.ctx, "ReaGit uninitiated.")
-    reaper.ImGui_PopFont(self.ctx)
     reaper.ImGui_PushFont(self.ctx, self.font.h2)
     if reaper.ImGui_Button(self.ctx, "INITIATE NOW") then
         self.project:init()
     end
     reaper.ImGui_PopFont(self.ctx)
-    reaper.ImGui_PushFont(self.ctx, self.font.p)
     reaper.ImGui_Text(self.ctx, "Note this will create a '.reagit' folder in the space directory as the project file")
-    reaper.ImGui_PopFont(self.ctx)
 end
 
 function Interface:drawSync(w, h)
@@ -109,36 +104,74 @@ function Interface:drawSync(w, h)
 
 end
 
-function Interface:drawTitle()
-    local w, h = reaper.ImGui_GetWindowSize(self.ctx)
-    local fh = h * 0.10
+function Interface:drawTitle(w, h)
     local title_w = w * 0.6
-    reaper.ImGui_BeginChildFrame(
-        self.ctx,
-        "header_title",
-        title_w,
-        fh
-    )
+    reaper.ImGui_BeginChildFrame(self.ctx, "header_title", title_w, h)
     reaper.ImGui_PushFont(self.ctx, self.font.h1)
-    reaper.ImGui_TextColored(self.ctx, 2868903935, "PROJECT")
+    reaper.ImGui_TextColored(self.ctx, 2868903935, self.project.name)
     reaper.ImGui_PopFont(self.ctx)
     reaper.ImGui_EndChildFrame(self.ctx)
     reaper.ImGui_SameLine(self.ctx)
-    self:drawSync(w - title_w, fh)
+    self:drawSync(w - title_w, h)
 end
 
-function Interface:drawGroups()
+function Interface:drawGroup(w, h, name, child)
+    reaper.ImGui_Text(self.ctx, name)
+end
 
+function Interface:drawAddNewChild(w, h)
+    local pad_x, pad_y = reaper.ImGui_GetStyleVar(self.ctx, reaper.ImGui_StyleVar_FramePadding())
+    local button_s = h*0.5
+    reaper.ImGui_BeginChildFrame(self.ctx, "new_group", w, h)
+    reaper.ImGui_PushStyleVar(self.ctx, reaper.ImGui_StyleVar_FrameRounding(), button_s)
+    reaper.ImGui_PushFont(self.ctx, self.font.h2)
+    local x, y = reaper.ImGui_GetCursorPos(self.ctx)
+    reaper.ImGui_SetCursorPos(self.ctx, x + w/2 - button_s/2, y + h/2 - button_s/2 - pad_y)
+    if reaper.ImGui_Button(self.ctx, "+", button_s, button_s) then
+        local retval, s = reaper.GetUserInputs("New group from selected tracks", 2, "Group name without space,commit message,extrawidth=100", "")
+        if retval then
+            local name, commit_msg = table.unpack(s:split(','))
+            local track_chunks = {}
+            for i = 0, reaper.CountSelectedTracks(-1) - 1, 1 do
+                local track = reaper.GetSelectedTrack(-1, i)
+                local _, chunk = reaper.GetTrackStateChunk(track, "", false)
+                table.insert(track_chunks, chunk)
+            end
+            self.project:add(
+                name:gsub("[%s\t\n]+", "-"),
+                commit_msg == "" and nil or commit_msg,
+                track_chunks
+            )
+        end
+    end
+    reaper.ImGui_PopFont(self.ctx)
+    reaper.ImGui_PopStyleVar(self.ctx)
+    reaper.ImGui_EndChildFrame(self.ctx)
+end
+
+function Interface:drawGroups(w, h)
+    local pad_x, pad_y = reaper.ImGui_GetStyleVar(self.ctx, reaper.ImGui_StyleVar_FramePadding())
+    local pad2_x, pad2_y = pad_x * 2, pad_y * 2
+    local group_h = h * 0.2
+    reaper.ImGui_BeginChild(self.ctx, "groups", w, h)
+    for k, child in pairs(self.project.children) do
+        self:drawGroup(w-pad2_x, group_h, k, child)
+    end
+    self:drawAddNewChild(w-pad2_x, group_h)
+    reaper.ImGui_EndChild(self.ctx)
 end
 
 function Interface:update()
+    local w, h = reaper.ImGui_GetWindowSize(self.ctx)
     if not self.project.initiated then
-        self:drawInit()
+        self:drawInit(w, h)
         return
     end
-    self:drawTitle()
+
+    local header_h = h * 0.10
+    self:drawTitle(w, header_h)
     reaper.ImGui_Spacing(self.ctx)
-    self:drawGroups()
+    self:drawGroups(w, h-header_h)
 end
 
 function Interface:loop()
