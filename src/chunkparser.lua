@@ -98,15 +98,15 @@ function ChunkParser:parse_children(content)
 end
 
 function ChunkParser:parse_item(content)
-    content = content:gsub('(IID %d+)', '%1\nTAKE FIRST') .. 'TAKE'
+    content = content:gsub('(IID %d+)', '%1\nTAKE FIRST') .. 'TAKE '
     local i = 1
-    for v in content:gmatch('(.-)TAKE') do
+    for v in content:gmatch('(.-)TAKE[\n%s]') do
         if i == 1 then
             for j, line in ipairs(v:split('\n')) do
                 self:parse_line(j, line)
             end
         else
-            self:add_child('TAKE'..v)
+            self:add_child('TAKE '..v)
         end
         i = i + 1
     end
