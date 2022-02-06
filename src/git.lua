@@ -54,7 +54,7 @@ function GIT:checkout_branch(branchname)
 end
 
 function GIT:list_branch()
-    self:run('git branch -l')
+    return self:run('git branch -l')
 end
 
 function GIT:delete_branch(branchname)
@@ -62,7 +62,7 @@ function GIT:delete_branch(branchname)
 end
 
 function GIT:current_branch()
-    self:run('git branch --show-current')
+    return self:run('git branch --show-current')
 end
 
 function GIT.new(path)
