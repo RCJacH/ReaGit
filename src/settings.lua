@@ -6,6 +6,18 @@ local Settings = {}
 Settings.__index = Settings
 Settings.SETTING_FILE = Pathlib(workspace_folder .. 'settings.ini')
 
+
+Settings.DEFAULT = {
+    title = "ReaGit",
+    width = 600,
+    height = 600,
+    x = 0,
+    y = 0,
+    dockstate = 0,
+
+}
+
+
 function Settings.parse(str)
     local setting_data = {}
     for line in str:gmatch('[^\r\n]+') do
@@ -23,8 +35,12 @@ end
 
 function Settings:read()
     local result = pcall(self.SETTING_FILE:read())
-    if not result then return {} end
-    for k, v in pairs(self.parse(result)) do
+    if not result then return Settings.DEFAULT end
+    self:update(self.parse(result))
+end
+
+function Settings:update(...)
+    for k, v in pairs({...}) do
         self[k] = v
     end
 end
