@@ -55,6 +55,15 @@ local Project = {}
 Project.__index = Project
 
 
+function Project:init()
+    self.path:mkdir()
+    self.git:init()
+    self.mainfile:write('')
+    self.git:add_all()
+    self.git:commit('init project')
+    self.initiated = true
+end
+
 function Project:add(name, ...)
     assert(self:get(name) == nil, 'Project already has a group called: '.. name)
     local project = SubProject(self.path / (name..'/'))
@@ -107,19 +116,16 @@ function Project.new(path)
         mainfile = dir / filename,
         path = dir,
         git = Git(dir),
-        children = {}
+        children = {},
+        initiated = false
     }
     setmetatable(self, Project)
 
-    if not self.path:exists() then
-        self.path:mkdir()
-        self.git:init()
-        self.mainfile:write('')
-        self.git:add_all()
-        self.git:commit('init project')
+    if self.path:exists() then
+        self.initiated = true
+        self.children = self:list()
     end
 
-    self.children = self:list()
 
     return self
 end
