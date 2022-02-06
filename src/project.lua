@@ -64,7 +64,7 @@ function Project:init()
     self.initiated = true
 end
 
-function Project:add(name, ...)
+function Project:add(name, message, ...)
     assert(self:get(name) == nil, 'Project already has a group called: '.. name)
     local project = SubProject(self.path / (name..'/'))
     project:init()
@@ -73,11 +73,11 @@ function Project:add(name, ...)
     self.git:commit('add '.. name .. ' as subproject')
     self.children[name] = project
     if #{...} > 0 then
-        self:update(name, ...)
+        self:update(name, message, ...)
     end
 end
 
-function Project:update(name, tracks, message)
+function Project:update(name, message, tracks)
     message = message or os.date('update '..name)
     local s = string.format('<GROUP %s\n%s\n>', name, table.concat(tracks, '\n'))
     self.children[name]:write(s)

@@ -25,7 +25,7 @@ function testAdd()
     if not project.initiated then
         project:init()
     end
-    project:add('TEST', GROUP_TRACKS_ONLY)
+    project:add('TEST', nil, GROUP_TRACKS_ONLY)
     LU.assertIsTrue((project.path / 'TEST' / 'TRACK' / 'ITEM' / '4C881EF6-B8BB-4B08-892B-AF3691AD5B25'):exists())
     LU.assertEquals(project:get('TEST').name, 'TEST')
     project.path:rm_no_regret()
