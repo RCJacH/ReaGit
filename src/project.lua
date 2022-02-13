@@ -6,6 +6,14 @@ local ChunkParser = require('src.chunkparser')
 local SubProject = {}
 SubProject.__index = SubProject
 
+
+function SubProject:current_branch()
+    if not self._branch then
+        self._branch = self.git:current_branch()
+    end
+    return self._branch
+end
+
 function SubProject:read()
     return ChunkParser(self.path / 'main')
 end
@@ -40,6 +48,7 @@ function SubProject.new(path)
     self.name = path:stem()
     self.git = Git(path)
     self.mainfile = self.path / 'main'
+    self._branch = nil
 
     return self
 end
@@ -88,7 +97,7 @@ end
 function Project:list()
     local t = {}
     for v in self.mainfile:read():gmatch('([^\r\n]+)') do
-        t[v] = v
+        t[v] = SubProject(self.path / (v..'/'))
     end
     return t
 end
