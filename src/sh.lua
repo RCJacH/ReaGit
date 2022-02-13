@@ -1,9 +1,11 @@
+local UNIX = package.config:sub(1,1) == '/'
+
 local Shell = {}
 Shell.__index = Shell
 
 
 local function join(...)
-    return table.concat({...}, ' && ')
+    return table.concat({...}, UNIX and '; ' or ' && ')
 end
 
 local function run(s)
@@ -15,10 +17,19 @@ local function run(s)
     return output
 end
 
+local function run_in_reaper(s)
+    local result, output = reaper.ExecProcess(s, 0):match('([^\n]+)\n(.+)')
+    return output
+end
 
 setmetatable(Shell, {
     __call = function (_, ...)
-        return run(join(...))
+        local args = join(...)
+        if reaper then
+            return run_in_reaper(args)
+        else
+            return run(args)
+        end
     end
 })
 
