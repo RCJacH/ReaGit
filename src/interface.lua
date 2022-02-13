@@ -40,10 +40,10 @@ function Interface:onExit()
 
 end
 
-function Interface:uploadPressed()
+function Interface:pushPressed()
 end
 
-function Interface:downloadPressed()
+function Interface:pullPressed()
 end
 
 function Interface:drawInit(w, h)
@@ -57,41 +57,46 @@ function Interface:drawInit(w, h)
 end
 
 function Interface:drawSync(w, h)
-    local left_w = w * 0.5
-    local right_w = w - left_w
+    local pad_x, pad_y = reaper.ImGui_GetStyleVar(self.ctx, reaper.ImGui_StyleVar_FramePadding())
+    local pad2_x, pad2_y = pad_x * 2, pad_y * 2
+    local frame_w = (w - pad2_x * 2) / 2
+    local frame_h = h - pad2_y
+    local button_w = frame_w
+    local button_h = (frame_h - pad2_y) / 2
     reaper.ImGui_BeginChildFrame(self.ctx, "header_sync", w, h)
     reaper.ImGui_PushFont(self.ctx, self.font.p)
     reaper.ImGui_PushStyleVar(self.ctx, reaper.ImGui_StyleVar_FramePadding(), 0, 0)
-    local frame_w = left_w * 0.85
     reaper.ImGui_BeginChildFrame(
         self.ctx,
         "header_sync_left",
         frame_w,
-        h,
+        frame_h,
         reaper.ImGui_WindowFlags_NoBackground()
     )
-    if reaper.ImGui_Button(self.ctx, "Push", frame_w) then
-        Interface:uploadPressed()
+    if reaper.ImGui_Button(self.ctx, "Push", button_w, button_h) then
+        Interface:pushPressed()
     end
-    if reaper.ImGui_Button(self.ctx, "Pull", frame_w) then
-        Interface:downloadPressed()
+    if reaper.ImGui_Button(self.ctx, "Pull", button_w, button_h) then
+        Interface:pullPressed()
     end
     reaper.ImGui_EndChildFrame(self.ctx)
 
     reaper.ImGui_SameLine(self.ctx)
 
-    local frame_w = right_w * 0.85
     reaper.ImGui_BeginChildFrame(
         self.ctx,
         "header_sync_right",
         frame_w,
-        h,
+        frame_h,
         reaper.ImGui_WindowFlags_NoBackground()
     )
-    if reaper.ImGui_Button(self.ctx, "Remote", frame_w) then
-        self:repoPressed()
+    if reaper.ImGui_Button(self.ctx, "Remote", button_w, button_h) then
+        self:remotePressed()
     end
     reaper.ImGui_PushStyleVar(self.ctx, reaper.ImGui_StyleVar_ItemInnerSpacing(), w * 0.05, 0)
+    local x, y = reaper.ImGui_GetCursorPos(self.ctx)
+    local tw, th = reaper.ImGui_CalcTextSize(self.ctx, "--force")
+    reaper.ImGui_SetCursorPos(self.ctx, x, y + button_h / 2 - th / 2)
     if reaper.ImGui_Checkbox(self.ctx, "--force", self.settings.force) then
         self.settings.force = not self.settings.force
     end
@@ -105,23 +110,64 @@ function Interface:drawSync(w, h)
 end
 
 function Interface:drawTitle(w, h)
+    local pad_x, pad_y = reaper.ImGui_GetStyleVar(self.ctx, reaper.ImGui_StyleVar_FramePadding())
+    local pad2_x = pad_x * 2
     local title_w = w * 0.6
-    reaper.ImGui_BeginChildFrame(self.ctx, "header_title", title_w, h)
+    reaper.ImGui_BeginChildFrame(self.ctx, "header_title", title_w - pad2_x, h)
     reaper.ImGui_PushFont(self.ctx, self.font.h1)
     reaper.ImGui_TextColored(self.ctx, 2868903935, self.project.name)
     reaper.ImGui_PopFont(self.ctx)
     reaper.ImGui_EndChildFrame(self.ctx)
     reaper.ImGui_SameLine(self.ctx)
-    self:drawSync(w - title_w, h)
+    self:drawSync(w - title_w - pad2_x, h)
 end
 
 function Interface:drawGroup(w, h, name, child)
-    reaper.ImGui_Text(self.ctx, name)
+    local buttons_per_row = 4
+    local pad_x, pad_y = reaper.ImGui_GetStyleVar(self.ctx, reaper.ImGui_StyleVar_FramePadding())
+
+    local fw = w - pad_x * 2
+    local fh = h - pad_y * 2
+    local name_h = fh * 0.4
+    local text_h
+    reaper.ImGui_BeginChildFrame(self.ctx, "group_"..name, w, h)
+
+    reaper.ImGui_PushFont(self.ctx, self.font.h2)
+    reaper.ImGui_Text(self.ctx, "Group: "..name)
+    local tw, th = reaper.ImGui_GetItemRectSize(self.ctx)
+    text_h = th + pad_y
+    reaper.ImGui_PopFont(self.ctx)
+    reaper.ImGui_Text(self.ctx, "Branch: "..child:current_branch())
+    local tw, th = reaper.ImGui_GetItemRectSize(self.ctx)
+    text_h = text_h + th + pad_y
+
+
+    local button_w = (w - pad_x * (buttons_per_row * 2)) / buttons_per_row
+    local button_h = (h - text_h - pad_y * (8 / buttons_per_row + 2)) / (8 / buttons_per_row)
+    reaper.ImGui_PushStyleColor(self.ctx, reaper.ImGui_Col_FrameBg(), 0)
+    reaper.ImGui_Button(self.ctx, "Update", button_w, button_h)
+    reaper.ImGui_SameLine(self.ctx)
+    reaper.ImGui_Button(self.ctx, "Amend", button_w, button_h)
+    reaper.ImGui_SameLine(self.ctx)
+    reaper.ImGui_Button(self.ctx, "List Tracks", button_w, button_h)
+    reaper.ImGui_SameLine(self.ctx)
+    reaper.ImGui_Button(self.ctx, "Switch Branch", button_w, button_h)
+
+    reaper.ImGui_Button(self.ctx, "Log", button_w, button_h)
+    reaper.ImGui_SameLine(self.ctx)
+    reaper.ImGui_Button(self.ctx, "Revert", button_w, button_h)
+    reaper.ImGui_SameLine(self.ctx)
+    reaper.ImGui_Button(self.ctx, "List Branches", button_w, button_h)
+    reaper.ImGui_SameLine(self.ctx)
+    reaper.ImGui_Button(self.ctx, "Delete Branch", button_w, button_h)
+    reaper.ImGui_PopStyleColor(self.ctx)
+    reaper.ImGui_EndChildFrame(self.ctx)
 end
 
 function Interface:drawAddNewChild(w, h)
     local pad_x, pad_y = reaper.ImGui_GetStyleVar(self.ctx, reaper.ImGui_StyleVar_FramePadding())
     local button_s = h*0.5
+    reaper.ImGui_PushStyleColor(self.ctx, reaper.ImGui_Col_FrameBg(), 0)
     reaper.ImGui_BeginChildFrame(self.ctx, "new_group", w, h)
     reaper.ImGui_PushStyleVar(self.ctx, reaper.ImGui_StyleVar_FrameRounding(), button_s)
     reaper.ImGui_PushFont(self.ctx, self.font.h2)
@@ -147,31 +193,37 @@ function Interface:drawAddNewChild(w, h)
     reaper.ImGui_PopFont(self.ctx)
     reaper.ImGui_PopStyleVar(self.ctx)
     reaper.ImGui_EndChildFrame(self.ctx)
+    reaper.ImGui_PopStyleColor(self.ctx)
 end
 
 function Interface:drawGroups(w, h)
     local pad_x, pad_y = reaper.ImGui_GetStyleVar(self.ctx, reaper.ImGui_StyleVar_FramePadding())
     local pad2_x, pad2_y = pad_x * 2, pad_y * 2
-    local group_h = h * 0.2
+    local group_w = w - pad2_x
+    local group_h = (h - pad2_y) * 0.2
     reaper.ImGui_BeginChild(self.ctx, "groups", w, h)
     for k, child in pairs(self.project.children) do
-        self:drawGroup(w-pad2_x, group_h, k, child)
+        self:drawGroup(group_w, group_h, k, child)
     end
-    self:drawAddNewChild(w-pad2_x, group_h)
+    self:drawAddNewChild(group_w, group_h)
     reaper.ImGui_EndChild(self.ctx)
 end
 
 function Interface:update()
-    local w, h = reaper.ImGui_GetWindowSize(self.ctx)
+    local pad_x, pad_y = reaper.ImGui_GetStyleVar(self.ctx, reaper.ImGui_StyleVar_FramePadding())
+    local pad2_x, pad2_y = pad_x * 2, pad_y * 2
+    local w, h = reaper.ImGui_GetWindowContentRegionMax(self.ctx)
+    self.settings.width = w
+    self.settings.height = h
     if not self.project.initiated then
         self:drawInit(w, h)
         return
     end
 
     local header_h = h * 0.10
-    self:drawTitle(w, header_h)
+    self:drawTitle(w, header_h-pad2_y*2)
     reaper.ImGui_Spacing(self.ctx)
-    self:drawGroups(w, h-header_h)
+    self:drawGroups(w, h-header_h-pad2_y*2)
 end
 
 function Interface:loop()
