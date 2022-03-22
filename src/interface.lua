@@ -1,6 +1,84 @@
 local Project = require('src.project')
 local Settings = require('src.settings')
 
+local Header = {}
+Header.__index = Header
+
+function Header.new(ctx, fonts)
+    local self = {ctx=ctx, fonts=fonts}
+    setmetatable(self, Header)
+    return self
+end
+
+function Header:drawTitle(w, h)
+    reaper.ImGui_BeginChildFrame(self.ctx, "header_title", w, h)
+    reaper.ImGui_PushFont(self.ctx, self.font.h1)
+    reaper.ImGui_TextColored(self.ctx, 2868903935, self.project.name)
+    reaper.ImGui_PopFont(self.ctx)
+    reaper.ImGui_EndChildFrame(self.ctx)
+    reaper.ImGui_SameLine(self.ctx)
+end
+
+function Header:drawSync(w, h)
+    local pad_x, pad_y = reaper.ImGui_GetStyleVar(self.ctx, reaper.ImGui_StyleVar_FramePadding())
+    local pad2_x, pad2_y = pad_x * 2, pad_y * 2
+    local frame_w = (w - pad2_x * 2) / 2
+    local frame_h = h - pad2_y
+    local button_w = frame_w
+    local button_h = (frame_h - pad2_y) / 2
+    reaper.ImGui_BeginChildFrame(self.ctx, "header_sync", w, h)
+    reaper.ImGui_PushFont(self.ctx, self.font.p)
+    reaper.ImGui_PushStyleVar(self.ctx, reaper.ImGui_StyleVar_FramePadding(), 0, 0)
+    reaper.ImGui_BeginChildFrame(
+        self.ctx,
+        "header_sync_left",
+        frame_w,
+        frame_h,
+        reaper.ImGui_WindowFlags_NoBackground()
+    )
+    if reaper.ImGui_Button(self.ctx, "Push", button_w, button_h) then
+        Interface:pushPressed()
+    end
+    if reaper.ImGui_Button(self.ctx, "Pull", button_w, button_h) then
+        Interface:pullPressed()
+    end
+    reaper.ImGui_EndChildFrame(self.ctx)
+
+    reaper.ImGui_SameLine(self.ctx)
+
+    reaper.ImGui_BeginChildFrame(
+        self.ctx,
+        "header_sync_right",
+        frame_w,
+        frame_h,
+        reaper.ImGui_WindowFlags_NoBackground()
+    )
+    if reaper.ImGui_Button(self.ctx, "Remote", button_w, button_h) then
+        self:remotePressed()
+    end
+    reaper.ImGui_PushStyleVar(self.ctx, reaper.ImGui_StyleVar_ItemInnerSpacing(), w * 0.05, 0)
+    local x, y = reaper.ImGui_GetCursorPos(self.ctx)
+    local tw, th = reaper.ImGui_CalcTextSize(self.ctx, "--force")
+    reaper.ImGui_SetCursorPos(self.ctx, x, y + button_h / 2 - th / 2)
+    if reaper.ImGui_Checkbox(self.ctx, "--force", self.settings.force) then
+        self.settings.force = not self.settings.force
+    end
+    reaper.ImGui_PopStyleVar(self.ctx)
+    reaper.ImGui_PopFont(self.ctx)
+    reaper.ImGui_EndChildFrame(self.ctx)
+    reaper.ImGui_PopStyleVar(self.ctx)
+
+    reaper.ImGui_EndChildFrame(self.ctx)
+
+end
+
+function Header:draw(w, h)
+    local pad_x, pad_y = reaper.ImGui_GetStyleVar(self.ctx, reaper.ImGui_StyleVar_FramePadding())
+    local pad2_x = pad_x * 2
+    local title_w = w * 0.6
+    self:drawTitle(title_w - pad2_x, h)
+    self:drawSync(w - title_w - pad2_x, h)
+end
 
 local Interface = {}
 Interface.__index = Interface
@@ -14,7 +92,8 @@ function Interface:init()
     self.font.h3 = reaper.ImGui_CreateFont('sans-serif', 20 + sizeOffset)
     self.font.h4 = reaper.ImGui_CreateFont('sans-serif', 18 + sizeOffset)
     self.font.h5 = reaper.ImGui_CreateFont('sans-serif', 16 + sizeOffset)
-    self.font.p = reaper.ImGui_CreateFont('sans-serif', 14 + sizeOffset)
+    self.font.h6 = reaper.ImGui_CreateFont('sans-serif', 14 + sizeOffset)
+    self.font.p = reaper.ImGui_CreateFont('sans-serif', 12 + sizeOffset)
     reaper.ImGui_AttachFont(self.ctx, self.font.h1)
     reaper.ImGui_AttachFont(self.ctx, self.font.h2)
     reaper.ImGui_AttachFont(self.ctx, self.font.h3)
@@ -49,11 +128,19 @@ end
 function Interface:drawInit(w, h)
     reaper.ImGui_Text(self.ctx, "ReaGit uninitiated.")
     reaper.ImGui_PushFont(self.ctx, self.font.h2)
-    if reaper.ImGui_Button(self.ctx, "INITIATE NOW") then
+    if reaper.ImGui_Button(self.ctx, "INITIATE NEW REPOSITORY") then
         self.project:init()
     end
     reaper.ImGui_PopFont(self.ctx)
-    reaper.ImGui_Text(self.ctx, "Note this will create a '.reagit' folder in the space directory as the project file")
+    reaper.ImGui_PushTextWrapPos(self.ctx, reaper.ImGui_GetFontSize(self.ctx) * 35.0)
+    reaper.ImGui_Text(self.ctx, "Note this will create a '.reagit' folder in the space directory as the project file.")
+    reaper.ImGui_Text(self.ctx, "You can also:")
+    reaper.ImGui_PopTextWrapPos(self.ctx)
+    reaper.ImGui_PushFont(self.ctx, self.font.h2)
+    if reaper.ImGui_Button(self.ctx, "LOCATE EXISTING REPOSITORY") then
+        
+    end
+    reaper.ImGui_PopFont(self.ctx)
 end
 
 function Interface:drawSync(w, h)
