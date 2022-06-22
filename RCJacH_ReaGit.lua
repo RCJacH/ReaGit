@@ -9,13 +9,17 @@ end
 require('src.std+')
 local INTERFACE = require('src.interface')
 
-local _, project_file = reaper.EnumProjects(-1)
+local PROJECT, PROJECT_FILEPATH = reaper.EnumProjects(-1)
+local retval, REAGIT_REPO = reaper.GetProjExtState(PROJECT, "reagit", "repo")
+if ~retval then
+    REAGIT_REPO = PROJECT_FILEPATH
+end
 
 local GUI
 
 
 function init()
-    GUI = INTERFACE(project_file)
+    GUI = INTERFACE(REAGIT_REPO)
     return true
 end
 

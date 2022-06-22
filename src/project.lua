@@ -1,6 +1,6 @@
 Pathlib = require('src.pathlib')
 local Git = require('src.git')
-local ChunkParser = require('src.chunkparser')
+local ChunkParser = require('src.parser.chunk')
 
 
 local SubProject = {}
@@ -65,7 +65,9 @@ Project.__index = Project
 
 
 function Project:init()
-    self.path:mkdir()
+    if not self.path:exists() then
+        self.path:mkdir()
+    end
     self.git:init()
     self.mainfile:write('')
     self.git:add_all()
@@ -74,20 +76,20 @@ function Project:init()
 end
 
 function Project:add(name, message, ...)
-    assert(self:get(name) == nil, 'Project already has a group called: '.. name)
-    local project = SubProject(self.path / (name..'/'))
+    assert(self:get(name) == nil, 'Project already has a group called: ' .. name)
+    local project = SubProject(self.path / (name .. '/'))
     project:init()
     self.mainfile:append_line(name)
     self.git:add(self.mainfile.path)
-    self.git:commit('add '.. name .. ' as subproject')
+    self.git:commit('add ' .. name .. ' as subproject')
     self.children[name] = project
-    if #{...} > 0 then
+    if #{ ... } > 0 then
         self:update(name, message, ...)
     end
 end
 
 function Project:update(name, message, tracks)
-    message = message or os.date('update '..name)
+    message = message or os.date('update ' .. name)
     local s = string.format('<GROUP %s\n%s\n>', name, table.concat(tracks, '\n'))
     self.children[name]:write(s)
     self.git:add(name)
@@ -97,7 +99,7 @@ end
 function Project:list()
     local t = {}
     for v in self.mainfile:read():gmatch('([^\r\n]+)') do
-        t[v] = SubProject(self.path / (v..'/'))
+        t[v] = SubProject(self.path / (v .. '/'))
     end
     return t
 end
@@ -118,7 +120,10 @@ end
 
 function Project.new(path)
     path = Pathlib(path)
-    local dir = path:parent() / '.reagit/'
+    local dir = (path:is_folder() and path or path:parent()) / ".reagit/"
+    if reaper.HasExtState("ReaGit", "repository") then
+        dir = reaper.GetExtState("ReaGit", "repository")
+    end
     local filename = path:stem()
     local self = {
         name = filename,
@@ -130,7 +135,7 @@ function Project.new(path)
     }
     setmetatable(self, Project)
 
-    if self.path:exists() then
+    if self.mainfile:exists() then
         self.initiated = true
         self.children = self:list()
     end

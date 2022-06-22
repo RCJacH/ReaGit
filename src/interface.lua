@@ -5,7 +5,7 @@ local Header = {}
 Header.__index = Header
 
 function Header.new(ctx, fonts)
-    local self = {ctx=ctx, fonts=fonts}
+    local self = { ctx = ctx, fonts = fonts }
     setmetatable(self, Header)
     return self
 end
@@ -105,11 +105,11 @@ end
 function Interface:exit()
     local dockstate, wx, wy, ww, wh = gfx.dock(-1, 0, 0, 0, 0)
     self.settings:update({
-        x=wx,
-        y=wy,
-        width=ww,
-        height=wh,
-        dockstate=dockstate
+        x = wx,
+        y = wy,
+        width = ww,
+        height = wh,
+        dockstate = dockstate
     })
     self.settings:write()
     reaper.ImGui_DestroyContext(self.ctx)
@@ -138,7 +138,11 @@ function Interface:drawInit(w, h)
     reaper.ImGui_PopTextWrapPos(self.ctx)
     reaper.ImGui_PushFont(self.ctx, self.font.h2)
     if reaper.ImGui_Button(self.ctx, "LOCATE EXISTING REPOSITORY") then
-        
+        local retval, path = reaper.GetUserFileNameForRead('', 'Select Existing Reagit Repository Main File', '')
+        if retval then
+            self.project = Project(path)
+            reaper.SetExtState("ReaGit", "repository", path)
+        end
     end
     reaper.ImGui_PopFont(self.ctx)
 end
@@ -217,14 +221,14 @@ function Interface:drawGroup(w, h, name, child)
     local fh = h - pad_y * 2
     local name_h = fh * 0.4
     local text_h
-    reaper.ImGui_BeginChildFrame(self.ctx, "group_"..name, w, h)
+    reaper.ImGui_BeginChildFrame(self.ctx, "group_" .. name, w, h)
 
     reaper.ImGui_PushFont(self.ctx, self.font.h2)
-    reaper.ImGui_Text(self.ctx, "Group: "..name)
+    reaper.ImGui_Text(self.ctx, "Group: " .. name)
     local tw, th = reaper.ImGui_GetItemRectSize(self.ctx)
     text_h = th + pad_y
     reaper.ImGui_PopFont(self.ctx)
-    reaper.ImGui_Text(self.ctx, "Branch: "..child:current_branch())
+    reaper.ImGui_Text(self.ctx, "Branch: " .. child:current_branch())
     local tw, th = reaper.ImGui_GetItemRectSize(self.ctx)
     text_h = text_h + th + pad_y
 
@@ -253,15 +257,16 @@ end
 
 function Interface:drawAddNewChild(w, h)
     local pad_x, pad_y = reaper.ImGui_GetStyleVar(self.ctx, reaper.ImGui_StyleVar_FramePadding())
-    local button_s = h*0.5
+    local button_s = h * 0.5
     reaper.ImGui_PushStyleColor(self.ctx, reaper.ImGui_Col_FrameBg(), 0)
     reaper.ImGui_BeginChildFrame(self.ctx, "new_group", w, h)
     reaper.ImGui_PushStyleVar(self.ctx, reaper.ImGui_StyleVar_FrameRounding(), button_s)
     reaper.ImGui_PushFont(self.ctx, self.font.h2)
     local x, y = reaper.ImGui_GetCursorPos(self.ctx)
-    reaper.ImGui_SetCursorPos(self.ctx, x + w/2 - button_s/2, y + h/2 - button_s/2 - pad_y)
+    reaper.ImGui_SetCursorPos(self.ctx, x + w / 2 - button_s / 2, y + h / 2 - button_s / 2 - pad_y)
     if reaper.ImGui_Button(self.ctx, "+", button_s, button_s) then
-        local retval, s = reaper.GetUserInputs("New group from selected tracks", 2, "Group name without space,commit message,extrawidth=100", "")
+        local retval, s = reaper.GetUserInputs("New group from selected tracks", 2,
+            "Group name without space,commit message,extrawidth=100", "")
         if retval then
             local name, commit_msg = table.unpack(s:split(','))
             local track_chunks = {}
@@ -308,9 +313,9 @@ function Interface:update()
     end
 
     local header_h = h * 0.10
-    self:drawTitle(w, header_h-pad2_y*2)
+    self:drawTitle(w, header_h - pad2_y * 2)
     reaper.ImGui_Spacing(self.ctx)
-    self:drawGroups(w, h-header_h-pad2_y*2)
+    self:drawGroups(w, h - header_h - pad2_y * 2)
 end
 
 function Interface:loop()
@@ -333,9 +338,9 @@ end
 
 function Interface.new(project_file)
     local self = {
-        select_index=0,
-        scroll_index=0,
-        pending_close=false
+        select_index = 0,
+        scroll_index = 0,
+        pending_close = false
     }
     setmetatable(self, Interface)
     self.settings = Settings()
@@ -345,7 +350,6 @@ function Interface.new(project_file)
 
     return self
 end
-
 
 setmetatable(Interface, {
     __call = function(_, ...)

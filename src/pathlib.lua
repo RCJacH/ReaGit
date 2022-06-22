@@ -1,13 +1,13 @@
 local Shell = require('src.sh')
 
-local UNIX = package.config:sub(1,1) == '/'
+local UNIX = package.config:sub(1, 1) == '/'
 
 
 local Pathlib = {}
 Pathlib.__index = Pathlib
 
 local function join(...)
-    return table.concat({...}, '/'):gsub('[/\\]+', '/')
+    return table.concat({ ... }, '/'):gsub('[/\\]+', '/')
 end
 
 function Pathlib:__tostring()
@@ -22,10 +22,9 @@ function Pathlib.__eq(self, other)
     end
 end
 
-function Pathlib.__div (self, other)
+function Pathlib.__div(self, other)
     return Pathlib.new(self.path, other)
 end
-
 
 function Pathlib:is_folder()
     return self.path:sub(-1) == '/'
@@ -48,13 +47,17 @@ function Pathlib:parent()
 end
 
 function Pathlib:run(...)
-    local dir = self:is_folder() and self.path or self.parent().path
+    local dir = self:is_folder() and self.path or self:parent().path
     return Shell(string.format('cd "%s"', dir), ...)
 end
 
 function Pathlib:exists()
-    local status, _, code = os.rename(self.path, self.path)
-    return status or code == 13
+    local is_file = not self:is_folder()
+    if reaper and is_file then
+        return reaper.file_exists(self.path)
+    end
+    local status, desc, code = os.rename(self.path, self.path)
+    return status or (is_file and code == 13)
 end
 
 function Pathlib:read()
@@ -79,12 +82,12 @@ function Pathlib:append(content)
 end
 
 function Pathlib:append_line(content)
-    self:append(content..'\n')
+    self:append(content .. '\n')
 end
 
 function Pathlib:mkdir()
     if not self:is_folder() then return end
-    return Shell(string.format('mkdir "%s"', self.path))
+    Shell(string.format('mkdir "%s"', self.path))
 end
 
 function Pathlib:rm_no_regret()
@@ -95,18 +98,16 @@ function Pathlib:rm_no_regret()
     return Shell(string.format('%s "%s"', command, self.path))
 end
 
-
 function Pathlib.new(...)
     local path = join(...)
-    local self = {path = path}
+    local self = { path = path }
     setmetatable(self, Pathlib)
     self._folder, self._name = self.path:match('(.+/)(%.?[^/]+)/?')
     local pos = self._name:find('%.')
-    self._stem = pos and self._name:sub(1, pos-1) or self._name
+    self._stem = pos and self._name:sub(1, pos - 1) or self._name
     self._ext = pos and self._name:sub(pos) or ''
     return self
 end
-
 
 setmetatable(Pathlib, {
     __call = function(_, ...)
