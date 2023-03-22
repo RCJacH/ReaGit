@@ -1,27 +1,28 @@
-local Node = {
-    parent = nil,
-    name = nil,
-    param = nil
-}
+local Node = {}
+Node.__index = Node
 
-function Node:new(o)
-    o = o or {}
-    setmetatable(o, self)
-    self.__index = self
-    return o
+function Node.new()
+    local self = {
+        parent = nil,
+        name = '',
+        param = ''
+    }
+    setmetatable(self, Node)
+    return self
 end
 
 function Node:parse(line)
-    self.name, self.param = line:split()
+    self.name, self.param = line:match('^([^%s]+)%s(.+)$')
+    return self
 end
 
 function Node:__tostring()
-    return self.name .. ' ' .. tostring(self.param)
+    return string.format("%s %s", self.name, self.parem)
 end
 
 function Node:remove()
     if self.parent then
-        table.remove(self.parent.children, self.parent:indexOf(self))
+        table.remove(self.parent.nodes, self.parent.nodes:indexOf(self))
     end
     self = nil
     return nil
@@ -29,7 +30,7 @@ end
 
 setmetatable(Node, {
     __call = function(_, line)
-        local node = Node:new()
+        local node = Node.new()
         node:parse(line)
         return node
     end
