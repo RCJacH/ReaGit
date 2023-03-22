@@ -18,8 +18,9 @@ function GIT:init(...)
 end
 
 function GIT:init_new(...)
-    if self:status() == 'fatal: not a git repository (or any of the parent directories): .git' then
-        self:init(...)
+    local _, result, _ = self:status()
+    if result == 'fatal: not a git repository (or any of the parent directories): .git' then
+        return self:init(...)
     end
 end
 
@@ -30,27 +31,27 @@ function GIT:add(...)
 end
 
 function GIT:rm(file)
-    self:run('rm -r' .. file)
+    return self:run('rm -r' .. file)
 end
 
 function GIT:add_all()
-    self:run('add -A')
+    return self:run('add -A')
 end
 
 function GIT:commit(message, ...)
-    self:run(table.concat({ string.format('commit -m "%s"', message), ... }))
+    return self:run(table.concat({ string.format('commit -m "%s"', message), ... }))
 end
 
 function GIT:commit_amend()
-    self:run('commit --amend')
+    return self:run('commit --amend')
 end
 
 function GIT:switch_branch(branchname)
-    self:run('switch -c ' .. branchname)
+    return self:run('switch -c ' .. branchname)
 end
 
 function GIT:checkout_branch(branchname)
-    self:run('checkout -b ' .. branchname)
+    return self:run('checkout -b ' .. branchname)
 end
 
 function GIT:list_branch()
@@ -58,7 +59,7 @@ function GIT:list_branch()
 end
 
 function GIT:delete_branch(branchname)
-    self:run('branchname -D ' .. branchname)
+    return self:run('branchname -D ' .. branchname)
 end
 
 function GIT:current_branch()
