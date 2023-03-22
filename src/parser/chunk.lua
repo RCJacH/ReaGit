@@ -1,4 +1,4 @@
-require("src.parser.node")
+local Node = require("src.parser.node")
 
 
 -----------------------------------------------------------
@@ -33,7 +33,7 @@ function Parser.parse_line(index, content, chunk)
         return
     end
     Parser.parse_meta(content, chunk)
-    chunk.add_node(Node(content))
+    chunk:add_node(Node(content))
 end
 
 function Parser.parse_children(content, chunk)
