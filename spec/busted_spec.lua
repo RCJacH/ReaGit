@@ -1,0 +1,5 @@
+describe("test busted working", function()
+    it("always passes", function()
+        assert(true)
+    end)
+end)
