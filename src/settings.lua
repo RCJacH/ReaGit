@@ -22,6 +22,10 @@ function Settings.parse(str)
     local setting_data = {}
     for line in str:gmatch('[^\r\n]+') do
         local key, values = table.unpack(line:trim():split('='))
+        if not key or not values then
+            goto continue
+        end
+
         local v = {}
         for value in values:gmatch('([^,]+)') do
             local tmp = tonumber(value)
@@ -29,6 +33,7 @@ function Settings.parse(str)
         end
         if #v == 1 then v = v[1] end
         setting_data[key:trim()] = v
+        ::continue::
     end
     return setting_data
 end
