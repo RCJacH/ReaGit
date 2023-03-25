@@ -3,5 +3,17 @@
 		{
 			"path": ".."
 		}
-	]
+	],
+	"settings": {
+		"testExplorer.useNativeTesting": true,
+		"busted-test-explorer.executable": "${workspaceFolder}\\lua_modules\\bin\\busted.bat",
+		"busted-test-explorer.cwd": "${workspaceFolder}",
+		"busted-test-explorer.env": {
+			"PATH": "${workspaceFolder};${env:PATH}"
+		},
+		"Lua.runtime.pathStrict": false,
+		"terminal.integrated.env.windows": {
+			"PATH": "${workspaceFolder};${workspaceFolder}/lua_modules/bin;${env:PATH}"
+		}
+	}
 }
